@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_current_admin, get_current_user
+from app.dependencies import get_active_round, get_current_admin, get_current_user, has_round_access
 from app.models import Movie, Round, RoundStatus, Vote
 from app.schemas import DeadlineUpdate, RoundCreate, RoundRename, RoundResponse
 
@@ -38,26 +38,17 @@ def list_rounds(db: Session = Depends(get_db), _=Depends(get_current_admin)):
 
 
 @router.get("/active", response_model=RoundResponse | None)
-def get_active_round(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    round_ = db.query(Round).filter(Round.status == RoundStatus.active).first()
-    if not round_:
+def get_active_round_endpoint(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    """The running round, or null. Guests only see it when invited."""
+    round_ = get_active_round(db)
+    if not round_ or not has_round_access(db, current_user):
         return None
-    # Admins und Stammgaeste sehen immer
-    if current_user.is_admin or current_user.is_regular:
-        return round_
-    # Gaeste nur wenn fuer diese Runde eingeladen
-    from app.models import RoundGuest
-    invited = db.query(RoundGuest).filter(
-        RoundGuest.round_id == round_.id,
-        RoundGuest.user_id == current_user.id
-    ).first()
-    return round_ if invited else None
+    return round_
 
 
 @router.post("/", response_model=RoundResponse, status_code=status.HTTP_201_CREATED)
 def create_round(payload: RoundCreate, db: Session = Depends(get_db), admin=Depends(get_current_admin)):
-    existing_active = db.query(Round).filter(Round.status == RoundStatus.active).first()
-    if existing_active:
+    if get_active_round(db):
         raise HTTPException(status_code=409, detail="Es gibt bereits eine aktive Runde")
 
     vote_deadline = parse_deadline(payload.vote_deadline)
