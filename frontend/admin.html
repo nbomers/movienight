@@ -2,749 +2,82 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Filmabend — Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Admin · movienight</title>
+  <link rel="icon" href="/frontend/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/frontend/fonts/inter.css">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #08080f; --s1: #0d0d1a; --s2: #131320; --s3: #1a1a2e; --s4: #22223a;
-      --br: rgba(255,255,255,0.07); --br2: rgba(255,255,255,0.12);
-      --gold: #e8c547; --gold-bg: rgba(232,197,71,0.12); --gold-bdr: rgba(232,197,71,0.25);
-      --t1: #f0f0f8; --t2: #b8b8d0; --t3: #686884;
-      --red: #f87171; --green: #4ade80;
-      --r: 12px; --rb: 8px;
-    }
-    html { -webkit-font-smoothing: antialiased; }
-    body { background: var(--bg); color: var(--t1); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
-
-    nav {
-      background: rgba(8,8,15,0.85); backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--br); padding: 0 1.5rem; height: 56px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 100;
-    }
-    .logo { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.04em; }
-    .logo em { color: var(--gold); font-style: normal; }
-    .npill {
-      height: 30px; padding: 0 0.75rem; background: var(--s2); border: 1px solid var(--br);
-      border-radius: 99px; color: var(--t2); font-size: 0.72rem; font-weight: 600;
-      display: inline-flex; align-items: center; cursor: pointer; text-decoration: none; transition: all 0.15s;
-    }
-    .npill:hover { border-color: var(--br2); color: var(--t1); }
-
-    main { max-width: 860px; margin: 0 auto; padding: 1.75rem 1.25rem 4rem; }
-    h1 { font-size: 1.3rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 1.75rem; }
-
-    .section { background: var(--s1); border: 1px solid var(--br); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.25rem; }
-    .section-title { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--br); }
-
-    .btn-primary { height: 34px; padding: 0 1rem; background: var(--gold); color: #08080f; border: none; border-radius: var(--rb); font-size: 0.8rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.15s; }
-    .btn-primary:hover { background: #f5d058; }
-    .btn-danger { height: 34px; padding: 0 0.9rem; background: transparent; border: 1px solid rgba(248,113,113,0.3); border-radius: var(--rb); color: var(--red); font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-    .btn-danger:hover { background: rgba(248,113,113,0.1); border-color: var(--red); }
-    .btn-secondary { height: 34px; padding: 0 0.9rem; background: var(--s2); border: 1px solid var(--br); border-radius: var(--rb); color: var(--t2); font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-    .btn-secondary:hover { border-color: var(--br2); color: var(--t1); }
-
-    .form-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
-    .form-label { font-size: 0.8rem; color: var(--t2); font-weight: 500; white-space: nowrap; }
-    .form-input { background: var(--s2); border: 1px solid var(--br); border-radius: var(--rb); color: var(--t1); padding: 0.5rem 0.75rem; font-size: 0.85rem; font-family: inherit; transition: border-color 0.15s; }
-    .form-input:focus { outline: none; border-color: var(--gold-bdr); }
-    select.form-input { cursor: pointer; }
-
-    /* Custom date picker */
-    .date-picker { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
-    .date-select { background: var(--s2); border: 1px solid var(--br); border-radius: var(--rb); color: var(--t1); padding: 0.5rem 0.6rem; font-size: 0.82rem; font-family: inherit; cursor: pointer; appearance: none; -webkit-appearance: none; }
-    .date-select:focus { outline: none; border-color: var(--gold-bdr); }
-    .date-sep { color: var(--t3); font-weight: 700; font-size: 0.85rem; }
-
-    .item-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .item-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.65rem 0.75rem; background: var(--s2); border: 1px solid var(--br); border-radius: var(--rb); flex-wrap: wrap; }
-    .item-main { flex: 1; min-width: 0; }
-    .item-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.15rem; }
-    .item-sub { font-size: 0.72rem; color: var(--t3); }
-    .item-actions { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0; }
-
-    .tag { height: 20px; padding: 0 0.5rem; border-radius: 5px; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; display: inline-flex; align-items: center; }
-    .tag-green { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.25); }
-    .tag-gold { background: var(--gold-bg); color: var(--gold); border: 1px solid var(--gold-bdr); }
-    .tag-gray { background: var(--s3); color: var(--t3); border: 1px solid var(--br); }
-    .tag-red { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.25); }
-
-    .invite-link-box { background: var(--s2); border: 1px solid rgba(74,222,128,0.25); border-radius: var(--rb); padding: 0.75rem; margin-bottom: 1rem; display: none; }
-    .invite-link-box p { font-size: 0.75rem; color: var(--t3); margin-bottom: 0.4rem; }
-    .invite-link-row { display: flex; gap: 0.5rem; }
-    .invite-link-row input { flex: 1; background: var(--s3); border: 1px solid var(--br); border-radius: var(--rb); color: var(--t1); padding: 0.4rem 0.65rem; font-size: 0.75rem; font-family: monospace; }
-
-    .msg { border-radius: var(--rb); padding: 0.5rem 0.75rem; font-size: 0.8rem; margin-bottom: 0.75rem; display: none; }
-    .msg.ok { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); color: var(--green); }
-    .msg.err { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--red); }
-
-    /* Complete modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(4,4,12,0.85); backdrop-filter: blur(12px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
-    .modal { background: var(--s1); border: 1px solid var(--br2); border-radius: 16px; width: 100%; max-width: 480px; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.7); }
-    .modal h3 { font-size: 1rem; font-weight: 800; margin-bottom: 0.5rem; }
-    .modal p { font-size: 0.82rem; color: var(--t2); margin-bottom: 1rem; }
-    .movie-pick-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 300px; overflow-y: auto; margin-bottom: 1rem; }
-    .movie-pick { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; background: var(--s2); border: 1px solid var(--br); border-radius: var(--rb); cursor: pointer; transition: all 0.15s; }
-    .movie-pick:hover { border-color: var(--gold-bdr); }
-    .movie-pick.selected { border-color: var(--gold-bdr); background: var(--gold-bg); }
-    .movie-pick img { width: 36px; height: 54px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: var(--s3); }
-    .movie-pick-fb { width: 36px; height: 54px; border-radius: 4px; background: var(--s3); flex-shrink: 0; }
-    .movie-pick-info { flex: 1; }
-    .movie-pick-title { font-size: 0.82rem; font-weight: 700; }
-    .movie-pick-meta { font-size: 0.7rem; color: var(--t3); margin-top: 0.1rem; }
-    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
-  </style>
+  <link rel="stylesheet" href="/frontend/css/base.css">
+  <link rel="stylesheet" href="/frontend/css/admin.css">
 </head>
 <body>
-<nav>
-  <div class="logo">film<em>abend</em> <span style="font-size:.7rem;color:var(--t3);font-weight:500;margin-left:.25rem">Admin</span></div>
-  <a href="app.html" class="npill">← Zurück</a>
-</nav>
 
-<main>
-  <h1>Admin-Panel</h1>
+<header class="topbar">
+  <a class="logo" href="app.html"><span class="logo-mark"><svg class="ic" aria-hidden="true"><use href="/frontend/img/icons.svg#ticket"/></svg></span><span>movie<b>night</b></span></a>
+  <a href="app.html" class="btn btn-ghost btn-sm"><svg class="ic" aria-hidden="true"><use href="/frontend/img/icons.svg#chevron-left"/></svg>Zur App</a>
+</header>
 
-  <!-- Einladungen -->
-  <div class="section">
-    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-      Einladungslinks
-      <div style="display:flex;gap:0.5rem">
-        <button class="btn-secondary" id="toggleExpiredBtn" style="height:24px;padding:0 0.6rem;font-size:0.68rem">Abgelaufene ausblenden</button>
-      </div>
-    </div>
-    <div class="form-row">
-      <span class="form-label">Gültig für:</span>
-      <select class="form-input" id="inviteExpiry">
-        <option value="24">24 Stunden</option>
-        <option value="72" selected>3 Tage</option>
-        <option value="168">7 Tage</option>
-        <option value="8760">1 Jahr</option>
-      </select>
-      <span class="form-label">Max. Nutzungen:</span>
-      <select class="form-input" id="inviteMaxUses">
-        <option value="1" selected>1× einmalig</option>
-        <option value="5">5×</option>
-        <option value="10">10×</option>
-        <option value="0">Unbegrenzt</option>
-      </select>
-      <span class="form-label">Typ:</span>
-      <select class="form-input" id="inviteType">
-        <option value="regular">⭐ Stammgast</option>
-        <option value="guest">👤 Gast</option>
-      </select>
-      <input type="text" class="form-input" id="inviteLabel" placeholder="Label (optional, z.B. Max)" style="width:160px">
-      <button class="btn-primary" id="createInviteBtn">Link erstellen</button>
-    </div>
-    <div class="invite-link-box" id="inviteLinkBox">
-      <p>Link kopieren und teilen:</p>
-      <div class="invite-link-row">
-        <input type="text" id="inviteLinkInput" readonly>
-        <button class="btn-secondary" id="copyLinkBtn">Kopieren</button>
-      </div>
-    </div>
-    <div class="item-list" id="inviteList"></div>
+<main class="admin">
+  <div class="admin-head">
+    <h1>Verwaltung</h1>
+    <nav class="admin-nav" aria-label="Abschnitte">
+      <a href="#rounds">Runden</a><a href="#invites">Einladungen</a><a href="#users">Nutzer</a>
+    </nav>
   </div>
 
-  <!-- Runden -->
-  <div class="section">
-    <div class="section-title">Runden</div>
-    <div id="roundMsg" class="msg"></div>
+  <section class="panel" id="rounds" aria-labelledby="roundsTitle">
+    <div class="panel-head"><h2 id="roundsTitle">Runde</h2></div>
+    <div id="currentRound"></div>
+    <h3 class="sub-title">Bisherige Runden</h3>
+    <div class="rows" id="roundList"></div>
+  </section>
 
-    <div style="margin-bottom:1rem">
-      <div class="form-row" style="margin-bottom:0.6rem">
-        <span class="form-label">Name:</span>
-        <input type="text" class="form-input" id="roundName" placeholder="Wird aus Datum generiert…" style="flex:1;min-width:180px">
-      </div>
-      <div class="form-row" style="margin-bottom:0.6rem">
-        <span class="form-label">Filmabend-Datum:</span>
-        <div class="date-picker">
-          <select class="date-select" id="ddDay" style="width:65px"></select>
-          <span class="date-sep">.</span>
-          <select class="date-select" id="ddMonth" style="width:110px"></select>
-          <span class="date-sep">.</span>
-          <select class="date-select" id="ddYear" style="width:75px"></select>
-        </div>
-      </div>
-      <div class="form-row" style="margin-bottom:0.75rem">
-        <span class="form-label">Deadline-Uhrzeit:</span>
-        <select class="date-select" id="ddHour" style="width:75px"></select>
-        <span class="date-sep">:</span>
-        <select class="date-select" id="ddMinute" style="width:65px"></select>
-        <span class="form-label" style="color:var(--t3);font-size:0.72rem">Uhr (Abstimmung endet)</span>
-      </div>
-      <button class="btn-primary" id="createRoundBtn">Runde starten</button>
+  <section class="panel" id="invites" aria-labelledby="invitesTitle">
+    <div class="panel-head">
+      <h2 id="invitesTitle">Einladungen</h2>
+      <button class="filter-toggle" id="toggleExpired" aria-pressed="false">Abgelaufene ausblenden</button>
     </div>
-
-    <div class="item-list" id="roundList"></div>
-  </div>
-  <!-- Nutzer & Stammgäste -->
-  <div class="section">
-    <div class="section-title">Nutzer</div>
-    <div id="userMsg" class="msg"></div>
-    <div class="item-list" id="userList"></div>
-  </div>
-
-  <!-- Deadline Edit Modal -->
-  <div class="modal-overlay" id="deadlineModal" style="display:none">
-    <div class="modal">
-      <h3>Deadline ändern</h3>
-      <p>Neue Abstimmungs-Deadline für diese Runde:</p>
-      <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.25rem">
-        <div class="form-row" style="margin:0">
-          <span class="form-label">Datum:</span>
-          <div class="date-picker">
-            <select class="date-select" id="dlDay" style="width:65px"></select>
-            <span class="date-sep">.</span>
-            <select class="date-select" id="dlMonth" style="width:110px"></select>
-            <span class="date-sep">.</span>
-            <select class="date-select" id="dlYear" style="width:75px"></select>
-          </div>
-        </div>
-        <div class="form-row" style="margin:0">
-          <span class="form-label">Uhrzeit:</span>
-          <select class="date-select" id="dlHour" style="width:75px"></select>
-          <span class="date-sep">:</span>
-          <select class="date-select" id="dlMinute" style="width:65px"></select>
-          <span class="form-label" style="color:var(--t3);font-size:0.72rem">Uhr</span>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-secondary" id="cancelDeadlineBtn">Abbrechen</button>
-        <button class="btn-primary" id="confirmDeadlineBtn">Speichern</button>
+    <form class="invite-form" id="inviteForm">
+      <div class="field"><label for="inviteType">Typ</label>
+        <select class="input" id="inviteType">
+          <option value="regular">Stammgast (sieht jede Runde)</option>
+          <option value="guest">Gast (nur eingeladene Runden)</option>
+        </select></div>
+      <div class="field"><label for="inviteExpiry">Gültig</label>
+        <select class="input" id="inviteExpiry">
+          <option value="24">24 Stunden</option>
+          <option value="72" selected>3 Tage</option>
+          <option value="168">7 Tage</option>
+          <option value="720">30 Tage</option>
+        </select></div>
+      <div class="field"><label for="inviteMaxUses">Nutzungen</label>
+        <select class="input" id="inviteMaxUses">
+          <option value="1" selected>Einmal</option>
+          <option value="5">5×</option>
+          <option value="10">10×</option>
+          <option value="0">Unbegrenzt</option>
+        </select></div>
+      <div class="field"><label for="inviteLabel">Für wen? (optional)</label>
+        <input class="input" id="inviteLabel" maxlength="100" placeholder="z. B. Max"></div>
+      <button class="btn btn-primary" type="submit"><svg class="ic" aria-hidden="true"><use href="/frontend/img/icons.svg#link"/></svg>Link erstellen</button>
+    </form>
+    <div class="new-link" id="newLink" hidden>
+      <span class="label">Neuer Link – jetzt teilen</span>
+      <div class="new-link-row">
+        <input class="input" id="newLinkInput" readonly aria-label="Einladungslink">
+        <button class="btn" id="newLinkCopy"><svg class="ic" aria-hidden="true"><use href="/frontend/img/icons.svg#copy"/></svg>Kopieren</button>
+        <button class="btn" id="newLinkShare" hidden>Teilen</button>
       </div>
     </div>
-  </div>
+    <div class="rows" id="inviteList"></div>
+  </section>
 
+  <section class="panel" id="users" aria-labelledby="usersTitle">
+    <div class="panel-head"><h2 id="usersTitle">Nutzer</h2><span class="panel-count" id="userCount"></span></div>
+    <div class="rows" id="userList"></div>
+  </section>
 </main>
 
-<!-- Complete Round Modal -->
-<div class="modal-overlay" id="completeModal" style="display:none">
-  <div class="modal">
-    <h3>Runde abschließen</h3>
-    <p>Welcher Film wurde heute geschaut? (Optional)</p>
-    <div class="movie-pick-list" id="moviePickList"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="cancelCompleteBtn">Abbrechen</button>
-      <button class="btn-secondary" id="completeNoMovieBtn">Ohne Film</button>
-      <button class="btn-primary" id="confirmCompleteBtn">Abschließen ✓</button>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { getMe, getInvites, getRounds, getMovies } from '/frontend/js/api.js';
-
-const $ = id => document.getElementById(id);
-const esc = str => { if(!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); };
-const api = (path, method='GET', body=null) => {
-  const t = localStorage.getItem('token');
-  const o = { method, headers: {'Content-Type':'application/json','Authorization':`Bearer ${t}`} };
-  if (body) o.body = JSON.stringify(body);
-  return fetch(path, o).then(async r => {
-    if (r.status === 204) return null;
-    const text = await r.text();
-    let d = null;
-    try { d = text ? JSON.parse(text) : null; } catch(e) { d = null; }
-    if (!r.ok) throw new Error((d && d.detail) || `Fehler ${r.status}`);
-    return d;
-  });
-};
-
-let currentUser = null;
-let pendingCompleteRoundId = null;
-let selectedWatchedMovieId = null;
-
-// ── DATE PICKER SETUP ─────────────────────────────────────────────────────────
-const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-
-function setupDatePicker() {
-  const now = new Date();
-
-  // Days
-  const dayEl = $('ddDay');
-  for(let d=1; d<=31; d++) dayEl.innerHTML += `<option value="${d}">${d}</option>`;
-  dayEl.value = now.getDate();
-
-  // Months
-  const monthEl = $('ddMonth');
-  MONTHS.forEach((m,i) => monthEl.innerHTML += `<option value="${i+1}">${m}</option>`);
-  monthEl.value = now.getMonth()+1;
-
-  // Years
-  const yearEl = $('ddYear');
-  for(let y=now.getFullYear(); y<=now.getFullYear()+2; y++) yearEl.innerHTML += `<option value="${y}">${y}</option>`;
-  yearEl.value = now.getFullYear();
-
-  // Hours
-  const hourEl = $('ddHour');
-  for(let h=0; h<24; h++) hourEl.innerHTML += `<option value="${h}">${String(h).padStart(2,'0')}</option>`;
-  hourEl.value = 15; // Default 15:00
-
-  // Minutes
-  const minEl = $('ddMinute');
-  ['00','15','30','45'].forEach(m => minEl.innerHTML += `<option value="${m}">${m}</option>`);
-  minEl.value = '00';
-
-  // Auto-generate name from date
-  function updateName() {
-    const d = $('ddDay').value;
-    const m = $('ddMonth').value;
-    const y = $('ddYear').value;
-    if(!$('roundName').dataset.userEdited) {
-      $('roundName').value = `${d}. ${MONTHS[m-1]} ${y}`;
-    }
-  }
-  ['ddDay','ddMonth','ddYear'].forEach(id => $(id).addEventListener('change', updateName));
-  updateName();
-}
-
-$('roundName').addEventListener('input', () => {
-  $('roundName').dataset.userEdited = 'true';
-});
-
-function getDeadlineISO() {
-  const d = $('ddDay').value.padStart(2,'0');
-  const mo = String($('ddMonth').value).padStart(2,'0');
-  const y = $('ddYear').value;
-  const h = String($('ddHour').value).padStart(2,'0');
-  const mi = String($('ddMinute').value).padStart(2,'0');
-  return `${y}-${mo}-${d}T${h}:${mi}:00`;
-}
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
-async function init() {
-  if (!localStorage.getItem('token')) { location.href = 'index.html'; return; }
-  try {
-    currentUser = await getMe();
-    if (!currentUser.is_admin) { location.href = 'app.html'; return; }
-  } catch { location.href = 'index.html'; return; }
-  setupDatePicker();
-  await Promise.all([loadInvites(), loadRounds(), loadUsers()]);
-}
-
-// ── INVITES ───────────────────────────────────────────────────────────────────
-async function loadInvites() {
-  try {
-    const invites = await api('/admin/invites');
-    const list = $('inviteList');
-    if (!invites.length) { list.innerHTML = `<div style="font-size:.82rem;color:var(--t3)">Noch keine Links erstellt.</div>`; return; }
-    list.innerHTML = invites.map(inv => {
-      const status = inv.is_used ? '<span class="tag tag-gray">Verbraucht</span>'
-        : inv.is_expired ? '<span class="tag tag-red">Abgelaufen</span>'
-        : '<span class="tag tag-green">Gültig</span>';
-      const uses = inv.max_uses === 0 ? '∞' : `${inv.use_count}/${inv.max_uses}`;
-      const exp = new Date(inv.expires_at).toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'});
-      const typeTag = inv.invite_type === 'regular'
-        ? '<span class="tag tag-gold">⭐ Stammgast</span>'
-        : '<span class="tag tag-gray">👤 Gast</span>';
-      const url = `${window.location.origin}/frontend/register.html?token=${inv.token}`;
-      const isValid = !inv.is_used && !inv.is_expired;
-      const labelText = inv.label ? `<span style="font-weight:700;color:var(--t1)">${esc(inv.label)} · </span>` : '';
-      const isExpiredOrUsed = inv.is_used || inv.is_expired;
-      return `<div class="item-row" data-expired="${isExpiredOrUsed}">
-        <div class="item-main">
-          <div class="item-title">${labelText}<span style="font-family:monospace;font-size:.72rem;color:var(--t3)">${esc(inv.token.substring(0,20))}…</span></div>
-          <div class="item-sub">Läuft ab: ${exp} · Nutzungen: ${uses}</div>
-        </div>
-        <div class="item-actions">
-          ${typeTag} ${status}
-          ${isValid ? `
-            <button class="btn-secondary" data-action="copy-invite" data-url="${url}">Kopieren</button>
-            <button class="btn-secondary" data-action="rename-invite" data-id="${inv.id}" data-label="${esc(inv.label||'')}">✏️</button>
-          ` : ''}
-          <button class="btn-danger" style="padding:0 0.6rem" data-action="delete-invite" data-id="${inv.id}" title="Löschen">🗑</button>
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e) { console.error(e); }
-}
-
-$('createInviteBtn').addEventListener('click', async () => {
-  const hours = parseInt($('inviteExpiry').value);
-  const maxUses = parseInt($('inviteMaxUses').value);
-  try {
-    const inviteType = $('inviteType').value;
-    const label = $('inviteLabel').value.trim() || null;
-    const inv = await api('/admin/invites', 'POST', { expires_in_hours: hours, max_uses: maxUses, invite_type: inviteType, label });
-    $('inviteLabel').value = '';
-    const url = `${window.location.origin}/frontend/register.html?token=${inv.token}`;
-    $('inviteLinkInput').value = url;
-    $('inviteLinkBox').style.display = 'block';
-    await loadInvites();
-  } catch(e) { alert(e.message); }
-});
-
-let hideExpired = false;
-$('toggleExpiredBtn').addEventListener('click', () => {
-  hideExpired = !hideExpired;
-  $('toggleExpiredBtn').textContent = hideExpired ? 'Alle anzeigen' : 'Abgelaufene ausblenden';
-  document.querySelectorAll('[data-expired="true"]').forEach(el => {
-    el.style.display = hideExpired ? 'none' : '';
-  });
-});
-
-$('inviteList').addEventListener('click', async e => {
-  const btn = e.target.closest('[data-action]'); if (!btn) return;
-  if (btn.dataset.action === 'copy-invite') {
-    navigator.clipboard.writeText(btn.dataset.url).then(() => {
-      const orig = btn.textContent;
-      btn.textContent = '✓ Kopiert';
-      setTimeout(() => btn.textContent = orig, 2000);
-    });
-  } else if (btn.dataset.action === 'delete-invite') {
-    if (!confirm('Link wirklich löschen?')) return;
-    try {
-      await api(`/admin/invites/${btn.dataset.id}`, 'DELETE');
-      await loadInvites();
-    } catch(e) { alert(e.message); }
-  } else if (btn.dataset.action === 'rename-invite') {
-    const newLabel = prompt('Label für diesen Link:', btn.dataset.label);
-    if (newLabel === null) return;
-    try {
-      await api(`/admin/invites/${btn.dataset.id}/label`, 'PATCH', { label: newLabel.trim() });
-      await loadInvites();
-    } catch(e) { alert(e.message); }
-  }
-});
-
-$('copyLinkBtn').addEventListener('click', () => {
-  navigator.clipboard.writeText($('inviteLinkInput').value).then(() => {
-    $('copyLinkBtn').textContent = '✓ Kopiert';
-    setTimeout(() => $('copyLinkBtn').textContent = 'Kopieren', 2000);
-  });
-});
-
-// ── ROUNDS ────────────────────────────────────────────────────────────────────
-async function loadRounds() {
-  try {
-    const rounds = await getRounds();
-    const list = $('roundList');
-    if (!rounds.length) { list.innerHTML = `<div style="font-size:.82rem;color:var(--t3)">Noch keine Runden.</div>`; return; }
-    list.innerHTML = rounds.map(r => {
-      const statusTag = r.status === 'active' ? '<span class="tag tag-gold">Aktiv</span>'
-        : r.status === 'completed' ? '<span class="tag tag-gray">Abgeschlossen</span>'
-        : '<span class="tag tag-red">Abgebrochen</span>';
-      const start = new Date(r.starts_at).toLocaleDateString('de-DE');
-      const deadline = r.vote_deadline
-        ? ` · Deadline: ${new Date(r.vote_deadline).toLocaleString('de-DE',{dateStyle:'short',timeStyle:'short'})}`
-        : ' · Keine Deadline';
-      return `<div class="item-row">
-        <div class="item-main">
-          <div class="item-title">${esc(r.name)}</div>
-          <div class="item-sub">Gestartet: ${start}${deadline}</div>
-        </div>
-        <div class="item-actions">
-          ${statusTag}
-          ${r.status === 'active' ? `
-            <button class="btn-secondary" data-action="guests" data-id="${r.id}">👥 Gäste</button>
-            <button class="btn-secondary" data-action="edit-deadline" data-id="${r.id}">⏰ Deadline</button>
-            <button class="btn-secondary" data-action="rename" data-id="${r.id}" data-name="${esc(r.name)}">✏️</button>
-            <button class="btn-danger" data-action="complete" data-id="${r.id}">Abschließen</button>
-          ` : r.status === 'completed' && !r.watched_movie_id ? `
-            <button class="btn-secondary" data-action="set-watched" data-id="${r.id}">🎬 Film markieren</button>
-          ` : r.watched_movie_id ? '<span class="tag tag-green">✓ Gesehen</span>' : ''}
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e) { console.error('loadRounds error:', e); showMsg('roundMsg', 'Fehler beim Laden: ' + e.message, 'err'); }
-}
-
-$('createRoundBtn').addEventListener('click', async () => {
-  const name = $('roundName').value.trim();
-  if (!name) { showMsg('roundMsg', 'Name eingeben', 'err'); return; }
-  const vote_deadline = getDeadlineISO();
-  try {
-    await api('/rounds/', 'POST', {
-      name,
-      starts_at: new Date().toISOString(),
-      vote_deadline: vote_deadline,
-      max_rounds_before_removal: 3
-    });
-    $('roundName').value = '';
-    $('roundName').dataset.userEdited = '';
-    showMsg('roundMsg', 'Runde gestartet!', 'ok');
-    await loadRounds();
-  } catch(e) { showMsg('roundMsg', e.message, 'err'); }
-});
-
-$('roundList').addEventListener('click', async e => {
-  const btn = e.target.closest('[data-action]'); if (!btn) return;
-  const id = parseInt(btn.dataset.id);
-
-  if (btn.dataset.action === 'rename') {
-    const newName = prompt('Neuer Name:', btn.dataset.name);
-    if (!newName?.trim()) return;
-    try { await api(`/rounds/${id}/rename`, 'PATCH', { name: newName.trim() }); await loadRounds(); }
-    catch(e) { showMsg('roundMsg', e.message, 'err'); }
-
-  } else if (btn.dataset.action === 'edit-deadline') {
-    openDeadlineModal(id);
-
-  } else if (btn.dataset.action === 'guests') {
-    await openGuestPicker(id);
-  } else if (btn.dataset.action === 'complete') {
-    await openCompleteModal(id);
-  } else if (btn.dataset.action === 'set-watched') {
-    await openSetWatchedModal(id);
-  }
-});
-
-// ── COMPLETE MODAL ────────────────────────────────────────────────────────────
-async function openCompleteModal(roundId) {
-  pendingCompleteRoundId = roundId;
-  selectedWatchedMovieId = null;
-  $('completeModal').style.display = 'flex';
-
-  try {
-    const movies = await getMovies();
-    const active = movies.filter(m => m.is_active);
-    const sorted = active.sort((a,b) => (b.upvotes+b.superlikes*3-b.downvotes)-(a.upvotes+a.superlikes*3-a.downvotes));
-    $('moviePickList').innerHTML = sorted.length ? sorted.map(m => `
-      <div class="movie-pick" data-id="${m.id}">
-        ${m.poster_path ? `<img src="https://image.tmdb.org/t/p/w92${esc(m.poster_path)}" alt="${esc(m.title)}">` : '<div class="movie-pick-fb"></div>'}
-        <div class="movie-pick-info">
-          <div class="movie-pick-title">${esc(m.title)}</div>
-          <div class="movie-pick-meta">♥ ${m.upvotes} · ⭐ ${m.superlikes} · 👎 ${m.downvotes}</div>
-        </div>
-      </div>`).join('')
-    : '<div style="color:var(--t3);font-size:.82rem">Keine aktiven Filme.</div>';
-  } catch { $('moviePickList').innerHTML = '<div style="color:var(--t3);font-size:.82rem">Fehler beim Laden.</div>'; }
-}
-
-$('moviePickList').addEventListener('click', e => {
-  const pick = e.target.closest('.movie-pick'); if (!pick) return;
-  document.querySelectorAll('.movie-pick').forEach(p => p.classList.remove('selected'));
-  if (selectedWatchedMovieId === parseInt(pick.dataset.id)) {
-    selectedWatchedMovieId = null;
-  } else {
-    pick.classList.add('selected');
-    selectedWatchedMovieId = parseInt(pick.dataset.id);
-  }
-});
-
-
-
-async function doComplete(movieId) {
-  const params = movieId ? `?watched_movie_id=${movieId}` : '';
-  try {
-    await api(`/rounds/${pendingCompleteRoundId}/complete${params}`, 'POST');
-    $('completeModal').style.display = 'none';
-    showMsg('roundMsg', movieId ? 'Runde abgeschlossen & Film markiert!' : 'Runde abgeschlossen!', 'ok');
-    await loadRounds();
-  } catch(e) { showMsg('roundMsg', e.message, 'err'); }
-}
-
-$('completeNoMovieBtn').addEventListener('click', () => doComplete(null));
-$('confirmCompleteBtn').addEventListener('click', () => doComplete(selectedWatchedMovieId));
-
-async function openSetWatchedModal(roundId) {
-  pendingCompleteRoundId = roundId;
-  selectedWatchedMovieId = null;
-
-  // Reuse completeModal but change title
-  $('completeModal').querySelector('h3').textContent = 'Film nachträglich markieren';
-  $('completeModal').querySelector('p').textContent = 'Welcher Film wurde in dieser Runde geschaut?';
-  $('completeNoMovieBtn').style.display = 'none';
-  $('confirmCompleteBtn').textContent = 'Markieren ✓';
-  $('confirmCompleteBtn').onclick = async () => {
-    if (!selectedWatchedMovieId) { showMsg('roundMsg','Bitte einen Film auswählen','err'); return; }
-    try {
-      await api(`/rounds/${roundId}/set-watched?watched_movie_id=${selectedWatchedMovieId}`, 'PATCH');
-      $('completeModal').style.display = 'none';
-      showMsg('roundMsg', 'Film markiert!', 'ok');
-      await loadRounds();
-    } catch(e) { showMsg('roundMsg', e.message, 'err'); }
-  };
-  $('completeModal').style.display = 'flex';
-
-  try {
-    const movies = await getMovies();
-    const sorted = [...movies].sort((a,b)=>(b.upvotes+b.superlikes*3-b.downvotes)-(a.upvotes+a.superlikes*3-a.downvotes));
-    $('moviePickList').innerHTML = sorted.length ? sorted.map(m => `
-      <div class="movie-pick" data-id="${m.id}">
-        ${m.poster_path ? `<img src="https://image.tmdb.org/t/p/w92${esc(m.poster_path)}" alt="${esc(m.title)}">` : '<div class="movie-pick-fb"></div>'}
-        <div class="movie-pick-info">
-          <div class="movie-pick-title">${esc(m.title)}</div>
-          <div class="movie-pick-meta">♥ ${m.upvotes} · ⭐ ${m.superlikes}</div>
-        </div>
-      </div>`).join('')
-    : '<div style="color:var(--t3);font-size:.82rem">Keine Filme gefunden.</div>';
-  } catch { $('moviePickList').innerHTML = '<div style="color:var(--t3);font-size:.82rem">Fehler.</div>'; }
-}
-
-// Reset modal state after close
-$('cancelCompleteBtn').addEventListener('click', () => {
-  $('completeModal').style.display = 'none';
-  $('completeModal').querySelector('h3').textContent = 'Runde abschließen';
-  $('completeModal').querySelector('p').textContent = 'Welcher Film wurde heute geschaut? (Optional)';
-  $('completeNoMovieBtn').style.display = '';
-  $('confirmCompleteBtn').style.display = '';
-  $('confirmCompleteBtn').textContent = 'Abschließen ✓';
-  $('confirmCompleteBtn').onclick = () => doComplete(selectedWatchedMovieId);
-});
-
-// ── USERS ────────────────────────────────────────────────────────────────────
-async function loadUsers() {
-  try {
-    const users = await api('/admin/users');
-    const list = $('userList');
-    if (!users.length) { list.innerHTML = '<div style="font-size:.82rem;color:var(--t3)">Noch keine Nutzer.</div>'; return; }
-    list.innerHTML = users.map(u => {
-      const isSelf = u.id === currentUser.id;
-      const regularTag = u.is_regular
-        ? '<span class="tag tag-gold">⭐ Stammgast</span>'
-        : '<span class="tag tag-gray">👤 Gast</span>';
-      const adminTag = u.is_admin ? '<span class="tag tag-green">Admin</span>' : '';
-      return `<div class="item-row">
-        <div class="item-main">
-          <div class="item-title">${esc(u.username)} ${adminTag}</div>
-          <div class="item-sub">Seit ${new Date(u.created_at).toLocaleDateString('de-DE')}</div>
-        </div>
-        <div class="item-actions">
-          ${regularTag}
-          ${!isSelf ? `
-            <button class="btn-secondary" style="font-size:0.72rem" data-action="toggle-regular" data-id="${u.id}">
-              ${u.is_regular ? '→ Gast' : '→ Stammgast'}
-            </button>
-            <button class="btn-danger" style="padding:0 0.6rem" data-action="delete" data-id="${u.id}" data-name="${esc(u.username)}" title="Nutzer löschen">🗑</button>
-          ` : '<span style="font-size:0.72rem;color:var(--t3)">(du)</span>'}
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e) { console.error(e); }
-}
-
-$('userList').addEventListener('click', async e => {
-  const btn = e.target.closest('[data-action]'); if (!btn) return;
-  const id = parseInt(btn.dataset.id);
-  try {
-    if (btn.dataset.action === 'toggle-regular') {
-      await api(`/admin/users/${id}/toggle-regular`, 'PATCH');
-    } else if (btn.dataset.action === 'delete') {
-      if (!confirm(`"${btn.dataset.name}" wirklich löschen? Alle Vorschläge, Votes und Kommentare werden entfernt.`)) return;
-      await api(`/admin/users/${id}`, 'DELETE');
-    }
-    await loadUsers();
-  } catch(e) { showMsg('userMsg', e.message, 'err'); }
-});
-
-// ── DEADLINE MODAL ───────────────────────────────────────────────────────────
-let pendingDeadlineRoundId = null;
-
-function setupDeadlineDropdowns() {
-  const now = new Date();
-  ['dlDay','dlMonth','dlYear','dlHour','dlMinute'].forEach(id => $(id).innerHTML='');
-
-  for(let d=1;d<=31;d++) $('dlDay').innerHTML+=`<option value="${d}">${d}</option>`;
-  MONTHS.forEach((m,i) => $('dlMonth').innerHTML+=`<option value="${i+1}">${m}</option>`);
-  for(let y=now.getFullYear();y<=now.getFullYear()+2;y++) $('dlYear').innerHTML+=`<option value="${y}">${y}</option>`;
-  for(let h=0;h<24;h++) $('dlHour').innerHTML+=`<option value="${h}">${String(h).padStart(2,'0')}</option>`;
-  ['00','15','30','45'].forEach(m => $('dlMinute').innerHTML+=`<option value="${m}">${m}</option>`);
-
-  // Default: today at 15:00
-  $('dlDay').value=now.getDate();
-  $('dlMonth').value=now.getMonth()+1;
-  $('dlYear').value=now.getFullYear();
-  $('dlHour').value=15;
-  $('dlMinute').value='00';
-}
-
-function openDeadlineModal(roundId) {
-  pendingDeadlineRoundId = roundId;
-  setupDeadlineDropdowns();
-  $('deadlineModal').style.display = 'flex';
-}
-
-$('cancelDeadlineBtn').addEventListener('click', () => {
-  $('deadlineModal').style.display = 'none';
-});
-
-$('confirmDeadlineBtn').addEventListener('click', async () => {
-  const d = String($('dlDay').value).padStart(2,'0');
-  const mo = String($('dlMonth').value).padStart(2,'0');
-  const y = $('dlYear').value;
-  const h = String($('dlHour').value).padStart(2,'0');
-  const mi = String($('dlMinute').value).padStart(2,'0');
-  // Build ISO string manually to avoid timezone conversion
-  const iso = `${y}-${mo}-${d}T${h}:${mi}:00`;
-  try {
-    await api(`/rounds/${pendingDeadlineRoundId}/deadline`, 'PATCH', { vote_deadline: iso });
-    $('deadlineModal').style.display = 'none';
-    showMsg('roundMsg', 'Deadline aktualisiert!', 'ok');
-    await loadRounds();
-  } catch(e) { showMsg('roundMsg', e.message, 'err'); }
-});
-
-// ── ROUND GUESTS ──────────────────────────────────────────────────────────────
-let allUsers = [];
-
-async function openGuestPicker(roundId) {
-  // Load all guest users
-  try {
-    const [users, currentGuests] = await Promise.all([
-      api('/admin/users'),
-      api(`/rounds/${roundId}/guests`)
-    ]);
-    allUsers = users;
-    const guestIds = new Set(currentGuests.map(g => g.user_id));
-    const guests = users.filter(u => !u.is_regular && !u.is_admin && u.is_active);
-
-    if (!guests.length) {
-      showMsg('roundMsg', 'Keine Gäste registriert', 'err');
-      return;
-    }
-
-    // Show in completeModal repurposed
-    const modal = $('completeModal');
-    modal.querySelector('h3').textContent = 'Gäste für diese Runde';
-    modal.querySelector('p').textContent = 'Wähle welche Gäste teilnehmen dürfen:';
-    $('completeNoMovieBtn').style.display = 'none';
-    $('confirmCompleteBtn').style.display = 'none';
-
-    $('moviePickList').innerHTML = guests.map(u => `
-      <div class="movie-pick ${guestIds.has(u.id)?'selected':''}" data-uid="${u.id}" data-round="${roundId}">
-        <div class="movie-pick-info">
-          <div class="movie-pick-title">${esc(u.username)}</div>
-          <div class="movie-pick-meta">${guestIds.has(u.id)?'✓ Eingeladen':'Nicht eingeladen'}</div>
-        </div>
-      </div>`).join('');
-
-    modal.style.display = 'flex';
-
-    // Click to toggle
-    $('moviePickList').querySelectorAll('[data-uid]').forEach(el => {
-      el.onclick = async () => {
-        const uid = parseInt(el.dataset.uid);
-        const rid = parseInt(el.dataset.round);
-        const isSelected = el.classList.contains('selected');
-        try {
-          if (isSelected) {
-            await api(`/rounds/${rid}/guests/${uid}`, 'DELETE');
-            el.classList.remove('selected');
-            el.querySelector('.movie-pick-meta').textContent = 'Nicht eingeladen';
-          } else {
-            await api(`/rounds/${rid}/guests`, 'POST', { user_id: uid });
-            el.classList.add('selected');
-            el.querySelector('.movie-pick-meta').textContent = '✓ Eingeladen';
-          }
-        } catch(e) { showMsg('roundMsg', e.message, 'err'); }
-      };
-    });
-  } catch(e) { showMsg('roundMsg', e.message, 'err'); }
-}
-
-function showMsg(id, text, type) {
-  const el = $(id);
-  el.textContent = text;
-  el.className = `msg ${type}`;
-  el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 4000);
-}
-
-init();
-</script>
+<script type="module" src="/frontend/js/admin.js"></script>
 </body>
 </html>
