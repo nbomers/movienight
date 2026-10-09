@@ -1,0 +1,37 @@
+# Environment & Secrets
+.env
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Binaries and local artifacts
+*.deb
+*.sqlite
+*.sqlite3
+.pytest_cache/
+.ruff_cache/

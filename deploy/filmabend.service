@@ -1,0 +1,28 @@
+# Example systemd unit. Adjust User, WorkingDirectory and paths.
+# Install: sudo cp deploy/filmabend.service /etc/systemd/system/
+#          sudo systemctl daemon-reload && sudo systemctl enable --now filmabend
+[Unit]
+Description=Filmabend (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=filmabend
+Group=filmabend
+WorkingDirectory=/opt/filmabend
+EnvironmentFile=/opt/filmabend/.env
+# --proxy-headers makes the real client IP visible behind Caddy, which the
+# login rate limit relies on. Bind to localhost only; Caddy is the entry point.
+ExecStart=/opt/filmabend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/filmabend
+
+[Install]
+WantedBy=multi-user.target

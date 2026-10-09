@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filmabend — Registrieren</title>
+  <link rel="stylesheet" href="/frontend/fonts/inter.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a22;
+      --border: #2a2a38;
+      --accent: #e8c547;
+      --accent-dim: #b8982f;
+      --text: #e8e8f0;
+      --text-muted: #7a7a9a;
+      --danger: #e05555;
+      --success: #4caf7d;
+      --radius: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .logo { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.25rem; }
+    .logo span { color: var(--accent); }
+    .subtitle { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 2rem; }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 0.7rem 0.9rem;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+      transition: border-color 0.15s;
+    }
+
+    input:focus { outline: none; border-color: var(--accent); }
+    input:read-only { opacity: 0.6; cursor: default; }
+
+    button[type="submit"] {
+      width: 100%;
+      background: var(--accent);
+      color: #0f0f13;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.15s;
+    }
+
+    button[type="submit"]:hover { background: var(--accent-dim); }
+
+    .message {
+      border-radius: var(--radius);
+      padding: 0.6rem 0.9rem;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .message.error { background: rgba(224,85,85,0.1); border: 1px solid var(--danger); color: var(--danger); }
+    .message.success { background: rgba(76,175,125,0.1); border: 1px solid var(--success); color: var(--success); }
+
+    .footer-link { text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); }
+    .footer-link a { color: var(--accent); text-decoration: none; }
+
+    .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: -0.6rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">film<span>abend</span></div>
+    <div class="subtitle">Account erstellen</div>
+
+    <div class="message" id="msg"></div>
+
+    <form id="registerForm">
+      <label for="token">Einladungstoken</label>
+      <input type="text" id="token" required>
+
+      <label for="username">Benutzername</label>
+      <input type="text" id="username" autocomplete="username"
+             pattern="[a-zA-Z0-9_\-]+" required>
+      <p class="hint">Nur Buchstaben, Zahlen, _ und -</p>
+
+      <label for="password">Passwort</label>
+      <input type="password" id="password" minlength="8"
+             autocomplete="new-password" required>
+
+      <label for="password2">Passwort wiederholen</label>
+      <input type="password" id="password2" autocomplete="new-password" required>
+
+      <button type="submit">Account erstellen</button>
+    </form>
+
+    <div class="footer-link">
+      Schon registriert? <a href="index.html">Anmelden</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { register } from '/frontend/js/api.js';
+
+    // Token aus URL-Parameter vorausfüllen: /register.html?token=xyz
+    const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get('token');
+    if (tokenParam) {
+      const tokenInput = document.getElementById('token');
+      tokenInput.value = tokenParam;
+      tokenInput.readOnly = true;
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('msg');
+      msg.style.display = 'none';
+      msg.className = 'message';
+
+      const password = document.getElementById('password').value;
+      const password2 = document.getElementById('password2').value;
+
+      if (password !== password2) {
+        msg.textContent = 'Passwörter stimmen nicht überein';
+        msg.classList.add('error');
+        msg.style.display = 'block';
+        return;
+      }
+
+      try {
+        await register(
+          document.getElementById('token').value.trim(),
+          document.getElementById('username').value.trim(),
+          password,
+        );
+        msg.textContent = 'Account erstellt! Du wirst weitergeleitet…';
+        msg.classList.add('success');
+        msg.style.display = 'block';
+        setTimeout(() => window.location.href = 'index.html', 1500);
+      } catch (ex) {
+        msg.textContent = ex.message;
+        msg.classList.add('error');
+        msg.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

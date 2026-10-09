@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filmabend — Login</title>
+  <link rel="stylesheet" href="/frontend/fonts/inter.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a22;
+      --border: #2a2a38;
+      --accent: #e8c547;
+      --accent-dim: #b8982f;
+      --text: #e8e8f0;
+      --text-muted: #7a7a9a;
+      --danger: #e05555;
+      --radius: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.25rem;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-bottom: 2rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 0.7rem 0.9rem;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+      transition: border-color 0.15s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      background: var(--accent);
+      color: #0f0f13;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 0.5rem;
+    }
+
+    button[type="submit"]:hover { background: var(--accent-dim); }
+
+    .error {
+      background: rgba(224, 85, 85, 0.1);
+      border: 1px solid var(--danger);
+      border-radius: var(--radius);
+      color: var(--danger);
+      padding: 0.6rem 0.9rem;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .footer-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .footer-link a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">film<span>abend</span></div>
+    <div class="subtitle">Meld dich an um abzustimmen</div>
+
+    <div class="error" id="error"></div>
+
+    <form id="loginForm">
+      <label for="username">Benutzername</label>
+      <input type="text" id="username" autocomplete="username" required>
+
+      <label for="password">Passwort</label>
+      <input type="password" id="password" autocomplete="current-password" required>
+
+      <button type="submit">Anmelden</button>
+    </form>
+
+    <div class="footer-link">
+      Einladungslink erhalten? <a href="register.html">Registrieren</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { login } from '/frontend/js/api.js';
+
+    // Bereits eingeloggt?
+    if (localStorage.getItem('token')) {
+      window.location.href = 'app.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('error');
+      err.style.display = 'none';
+
+      try {
+        const data = await login(
+          document.getElementById('username').value.trim(),
+          document.getElementById('password').value,
+        );
+        localStorage.setItem('token', data.access_token);
+        window.location.href = 'app.html';
+      } catch (ex) {
+        err.textContent = ex.message;
+        err.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

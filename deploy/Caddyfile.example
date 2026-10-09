@@ -1,0 +1,12 @@
+# Example Caddyfile. Replace the domain with your own.
+# Caddy obtains a TLS certificate automatically when the domain points here.
+movies.example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8000
+}
+
+# Behind Cloudflare Tunnel, TLS ends at Cloudflare and the tunnel connects to
+# Caddy over plain HTTP. Use a site address like this instead:
+# :8080 {
+# 	reverse_proxy 127.0.0.1:8000
+# }
