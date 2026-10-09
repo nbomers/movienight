@@ -16,7 +16,7 @@ os.environ.update(
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.auth import create_access_token, hash_password  # noqa: E402
+from app.auth import hash_password, token_for_user  # noqa: E402
 from app.database import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Round, RoundGuest, User  # noqa: E402
@@ -51,7 +51,9 @@ def make_user(username: str, *, admin: bool = False, regular: bool = False) -> i
 
 
 def auth(username: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {create_access_token({'sub': username})}"}
+    with SessionLocal() as db:
+        user = db.query(User).filter(User.username == username).one()
+        return {"Authorization": f"Bearer {token_for_user(user)}"}
 
 
 def invite_guest(user_id: int, round_id: int) -> None:

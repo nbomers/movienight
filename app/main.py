@@ -9,6 +9,7 @@ from starlette.requests import Request as StarletteRequest
 
 from app.auth import hash_password
 from app.config import settings
+from app import migrations
 from app.database import Base, SessionLocal, engine
 from app.models import User
 from app.routers import admin, auth, comments, movies, round_guests, rounds, tmdb, votes
@@ -19,6 +20,7 @@ FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    migrations.upgrade(engine)
     _ensure_admin_exists()
     yield
 

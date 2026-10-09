@@ -174,6 +174,11 @@ class PasswordReset(BaseModel):
     model_config = {"str_strip_whitespace": True}
 
 
+class PasswordChange(BaseModel):
+    current_password: str = Field(max_length=200)
+    new_password: str = Field(min_length=8, max_length=72)
+
+
 class InviteLabelUpdate(BaseModel):
     label: str | None = Field(default=None, max_length=100)
     model_config = {"str_strip_whitespace": True}

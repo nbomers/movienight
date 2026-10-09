@@ -94,6 +94,7 @@ def reset_user_password(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User nicht gefunden")
     user.hashed_password = hash_password(payload.password)
+    user.token_version += 1  # log the user out everywhere
     db.commit()
     db.refresh(user)
     return user

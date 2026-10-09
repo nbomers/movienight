@@ -4,67 +4,60 @@ from sqlalchemy.orm import Session
 
 from app.auth import decode_access_token
 from app.database import get_db
-from app.models import User
+from app.models import Round, RoundGuest, RoundStatus, User
 
-# HTTPBearer extrahiert den Token aus dem Authorization: Bearer <token> Header
-bearer_scheme = HTTPBearer()
+# auto_error=False: a missing header is answered with 401 below instead of
+# FastAPI's default 403, so the frontend can treat both cases the same.
+bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def _unauthorized(detail: str) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=detail,
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    """
-    Dependency: Gibt den aktuell eingeloggten User zurück.
-    Wirft 401 bei ungültigem/fehlendem Token.
-    """
-    token = credentials.credentials
-    payload = decode_access_token(token)
+    """The logged-in user. Every request re-reads the user, so deactivation and
+    password changes take effect immediately."""
+    if credentials is None:
+        raise _unauthorized("Nicht angemeldet")
 
+    payload = decode_access_token(credentials.credentials)
     if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token ungültig oder abgelaufen",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise _unauthorized("Token ungültig oder abgelaufen")
 
-    username: str | None = payload.get("sub")
-    if username is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token enthält keinen Benutzer",
-        )
+    subject = payload.get("sub")
+    if not isinstance(subject, str) or not subject.isdigit():
+        raise _unauthorized("Token ungültig oder abgelaufen")
 
-    user = db.query(User).filter(User.username == username).first()
-    if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Benutzer nicht gefunden oder deaktiviert",
-        )
+    user = db.get(User, int(subject))
+    if user is None or not user.is_active or payload.get("ver") != user.token_version:
+        raise _unauthorized("Sitzung abgelaufen, bitte neu anmelden")
 
     return user
 
 
 def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
-    """
-    Dependency: Wie get_current_user, aber nur für Admins.
-    Wirft 403 wenn der User kein Admin ist.
-    """
     if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Keine Adminrechte",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Keine Adminrechte")
     return current_user
+
+
+def get_active_round(db: Session) -> Round | None:
+    return db.query(Round).filter(Round.status == RoundStatus.active).first()
 
 
 def has_round_access(db: Session, user: User) -> bool:
     """Admins and regulars always; guests only when invited to the active round."""
-    from app.models import Round, RoundGuest, RoundStatus
-
     if user.is_admin or user.is_regular:
         return True
-    active_round = db.query(Round).filter(Round.status == RoundStatus.active).first()
+    active_round = get_active_round(db)
     if not active_round:
         return False
     guest_entry = db.query(RoundGuest).filter(

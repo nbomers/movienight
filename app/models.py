@@ -6,6 +6,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 import enum
+import secrets
 
 
 class VoteType(str, enum.Enum):
@@ -34,6 +35,13 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_regular: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)  # Stammgast
+    # Part of every login token. Raising it (password change or reset) makes
+    # all tokens issued before invalid. It starts at a random value because
+    # SQLite reuses the id of a deleted user, and a new account with that id
+    # must not accept the old account's tokens.
+    token_version: Mapped[int] = mapped_column(
+        Integer, default=lambda: secrets.randbits(31), nullable=False, server_default="0"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

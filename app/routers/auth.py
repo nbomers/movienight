@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app.auth import create_access_token, hash_password, verify_password
+from app.auth import hash_password, token_for_user, verify_password
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models import InviteToken, User
 from app.rate_limit import auth_limiter, client_key
-from app.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.schemas import LoginRequest, PasswordChange, RegisterRequest, TokenResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -96,11 +96,32 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
             detail="Account deaktiviert",
         )
 
-    token = create_access_token({"sub": user.username, "admin": user.is_admin})
-    return TokenResponse(access_token=token)
+    return TokenResponse(access_token=token_for_user(user))
 
 
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     """Gibt den aktuell eingeloggten User zurück."""
     return current_user
+
+
+@router.post("/change-password", response_model=TokenResponse)
+def change_password(
+    payload: PasswordChange,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Change the own password. All other sessions are logged out; the caller
+    gets a fresh token so the current session continues."""
+    key = client_key(request)
+    auth_limiter.ensure_allowed(key)
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        auth_limiter.record(key)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Aktuelles Passwort ist falsch")
+
+    current_user.hashed_password = hash_password(payload.new_password)
+    current_user.token_version += 1
+    db.commit()
+    db.refresh(current_user)
+    return TokenResponse(access_token=token_for_user(current_user))
