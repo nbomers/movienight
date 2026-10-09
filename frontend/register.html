@@ -2,183 +2,60 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Filmabend — Registrieren</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="referrer" content="no-referrer">
+  <title>Account erstellen · movienight</title>
+  <link rel="icon" href="/frontend/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/frontend/fonts/inter.css">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #0f0f13;
-      --surface: #1a1a22;
-      --border: #2a2a38;
-      --accent: #e8c547;
-      --accent-dim: #b8982f;
-      --text: #e8e8f0;
-      --text-muted: #7a7a9a;
-      --danger: #e05555;
-      --success: #4caf7d;
-      --radius: 8px;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 2.5rem;
-      width: 100%;
-      max-width: 400px;
-    }
-
-    .logo { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.25rem; }
-    .logo span { color: var(--accent); }
-    .subtitle { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 2rem; }
-
-    label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.4rem;
-    }
-
-    input {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      padding: 0.7rem 0.9rem;
-      font-size: 0.95rem;
-      margin-bottom: 1rem;
-      transition: border-color 0.15s;
-    }
-
-    input:focus { outline: none; border-color: var(--accent); }
-    input:read-only { opacity: 0.6; cursor: default; }
-
-    button[type="submit"] {
-      width: 100%;
-      background: var(--accent);
-      color: #0f0f13;
-      border: none;
-      border-radius: var(--radius);
-      padding: 0.75rem;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 0.5rem;
-      transition: background 0.15s;
-    }
-
-    button[type="submit"]:hover { background: var(--accent-dim); }
-
-    .message {
-      border-radius: var(--radius);
-      padding: 0.6rem 0.9rem;
-      font-size: 0.875rem;
-      margin-bottom: 1rem;
-      display: none;
-    }
-
-    .message.error { background: rgba(224,85,85,0.1); border: 1px solid var(--danger); color: var(--danger); }
-    .message.success { background: rgba(76,175,125,0.1); border: 1px solid var(--success); color: var(--success); }
-
-    .footer-link { text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); }
-    .footer-link a { color: var(--accent); text-decoration: none; }
-
-    .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: -0.6rem; margin-bottom: 1rem; }
-  </style>
+  <link rel="stylesheet" href="/frontend/css/base.css">
 </head>
 <body>
-  <div class="card">
-    <div class="logo">film<span>abend</span></div>
-    <div class="subtitle">Account erstellen</div>
+  <div class="auth-poster-strip" aria-hidden="true"></div>
+  <main class="auth">
+    <div class="auth-card">
+      <span class="logo"><span class="logo-mark"><svg class="ic" aria-hidden="true"><use href="/frontend/img/icons.svg#ticket"/></svg></span><span>movie<b>night</b></span></span>
+      <h1 class="auth-title">Du bist eingeladen</h1>
+      <p class="auth-sub">Leg dir einen Account an, schlag Filme vor und stimm mit ab.</p>
 
-    <div class="message" id="msg"></div>
+      <div class="alert" id="msg" role="alert" hidden></div>
 
-    <form id="registerForm">
-      <label for="token">Einladungstoken</label>
-      <input type="text" id="token" required>
+      <form id="registerForm" novalidate>
+        <div class="alert alert-ok" id="tokenOk" hidden>
+          <svg class="ic" aria-hidden="true"><use href="/frontend/img/icons.svg#check"/></svg>
+          <span>Einladung erkannt</span>
+        </div>
+        <div class="field" id="tokenField">
+          <label for="token">Einladungscode</label>
+          <input class="input" type="text" id="token" autocomplete="off" spellcheck="false" maxlength="64" required>
+          <span class="hint">Steht im Einladungslink hinter <code>token=</code>.</span>
+        </div>
+        <div class="field">
+          <label for="username">Benutzername</label>
+          <input class="input" type="text" id="username" autocomplete="username" autocapitalize="none"
+                 spellcheck="false" minlength="3" maxlength="50" pattern="[a-zA-Z0-9_\-]+" required>
+          <span class="hint">3–50 Zeichen: Buchstaben, Zahlen, _ und -</span>
+        </div>
+        <div class="field">
+          <label for="password">Passwort</label>
+          <div class="input-wrap">
+            <input class="input" type="password" id="password" minlength="8" maxlength="72" autocomplete="new-password" required>
+            <button type="button" class="input-action" data-toggle-password aria-label="Passwort anzeigen">
+              <svg class="ic" aria-hidden="true"><use href="/frontend/img/icons.svg#eye"/></svg>
+            </button>
+          </div>
+          <span class="hint">Mindestens 8 Zeichen</span>
+        </div>
+        <div class="field">
+          <label for="password2">Passwort wiederholen</label>
+          <input class="input" type="password" id="password2" autocomplete="new-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Account erstellen</button>
+      </form>
 
-      <label for="username">Benutzername</label>
-      <input type="text" id="username" autocomplete="username"
-             pattern="[a-zA-Z0-9_\-]+" required>
-      <p class="hint">Nur Buchstaben, Zahlen, _ und -</p>
-
-      <label for="password">Passwort</label>
-      <input type="password" id="password" minlength="8"
-             autocomplete="new-password" required>
-
-      <label for="password2">Passwort wiederholen</label>
-      <input type="password" id="password2" autocomplete="new-password" required>
-
-      <button type="submit">Account erstellen</button>
-    </form>
-
-    <div class="footer-link">
-      Schon registriert? <a href="index.html">Anmelden</a>
+      <p class="auth-foot">Schon registriert? <a href="index.html">Anmelden</a></p>
     </div>
-  </div>
-
-  <script type="module">
-    import { register } from '/frontend/js/api.js';
-
-    // Token aus URL-Parameter vorausfüllen: /register.html?token=xyz
-    const params = new URLSearchParams(window.location.search);
-    const tokenParam = params.get('token');
-    if (tokenParam) {
-      const tokenInput = document.getElementById('token');
-      tokenInput.value = tokenParam;
-      tokenInput.readOnly = true;
-    }
-
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('msg');
-      msg.style.display = 'none';
-      msg.className = 'message';
-
-      const password = document.getElementById('password').value;
-      const password2 = document.getElementById('password2').value;
-
-      if (password !== password2) {
-        msg.textContent = 'Passwörter stimmen nicht überein';
-        msg.classList.add('error');
-        msg.style.display = 'block';
-        return;
-      }
-
-      try {
-        await register(
-          document.getElementById('token').value.trim(),
-          document.getElementById('username').value.trim(),
-          password,
-        );
-        msg.textContent = 'Account erstellt! Du wirst weitergeleitet…';
-        msg.classList.add('success');
-        msg.style.display = 'block';
-        setTimeout(() => window.location.href = 'index.html', 1500);
-      } catch (ex) {
-        msg.textContent = ex.message;
-        msg.classList.add('error');
-        msg.style.display = 'block';
-      }
-    });
-  </script>
+  </main>
+  <script type="module" src="/frontend/js/register.js"></script>
 </body>
 </html>
