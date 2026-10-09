@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
 
+    # Old default file name, kept so installs without DATABASE_URL keep their
+    # data. New installs set movienight.db through .env.example.
     DATABASE_URL: str = "sqlite:///./filmabend.db"
 
     TMDB_API_KEY: str = ""

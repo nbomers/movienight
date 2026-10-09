@@ -15,13 +15,15 @@ Everyone proposes up to three films per round, the group votes until a deadline,
 ## Features
 
 - **Rounds with deadlines:** one active round at a time; no votes or new proposals once the deadline has passed
-- **Voting:** upvote, downvote and one superlike per person and round; a ranked grid plus a Tinder-style swipe tab
+- **Voting:** like, nope and one superlike per person and round, in a ranked poster grid or in the swipe tab
+- **Swipe mode:** a card deck with drag, flick and keyboard controls, undo, "later", and a summary at the end
 - **Carry-over:** unwatched films move to the next round with their votes reset, and drop out after a configurable number of rounds
-- **TMDB search:** posters, genres, overviews and trailer links come from The Movie Database
+- **TMDB search:** posters, genres, overviews and German or English trailers from The Movie Database; without a key, films are added by hand
 - **Invite-only accounts:** single- or multi-use invite links for regulars or one-off guests; guests only see the rounds they were invited to
 - **Comments** per film and a history of what you watched
+- **Accounts:** change your own password; admins reset passwords, grant or revoke admin rights, deactivate, reactivate or delete users
 - **Admin panel** for rounds, invites, guests and users
-- Mobile-first UI in plain HTML, CSS and JavaScript, with no build step
+- Mobile-first UI in plain HTML, CSS and JavaScript modules, with no build step
 
 ## Tech stack
 
@@ -77,7 +79,26 @@ pytest
 - [`deploy/movienight.service`](deploy/movienight.service): systemd unit. It binds uvicorn to localhost and enables `--proxy-headers`, so the login rate limit sees real client IPs.
 - [`deploy/Caddyfile.example`](deploy/Caddyfile.example): reverse proxy with automatic HTTPS, plus a variant for use behind Cloudflare Tunnel.
 
-Back up the SQLite file (`movienight.db` by default) the same way as any other data directory.
+Back up the SQLite file (`movienight.db` with the example `.env`) the same way as any other data directory. The app runs SQLite in WAL mode, so copy the `-wal` file too, or use `sqlite3 movienight.db ".backup backup.db"`.
+
+Installs that predate the rename and have no `DATABASE_URL` set keep using `filmabend.db`.
+
+### Configuration
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SECRET_KEY` | (required) | Signs login tokens |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` | Token lifetime (7 days) |
+| `DATABASE_URL` | `sqlite:///./filmabend.db` | SQLite file |
+| `TMDB_API_KEY` | empty | Enables search; without it films are added by hand |
+| `MAX_MOVIES_PER_USER` | `3` | Proposals per person and round |
+| `FIRST_ADMIN_USERNAME` / `FIRST_ADMIN_PASSWORD` | `admin` / empty | Initial admin, first start only |
+| `CORS_ORIGINS` | `[]` | Only for a frontend on another origin |
+| `AUTH_RATE_LIMIT` / `AUTH_RATE_WINDOW_SECONDS` | `10` / `300` | Failed logins per IP and window |
+
+### Upgrading
+
+Login tokens are now bound to the user id and a per-user token version. Tokens issued by earlier versions are rejected, so everyone logs in once after the update. The new database column is added automatically at startup.
 
 ## Design decisions
 
@@ -89,7 +110,9 @@ Back up the SQLite file (`movienight.db` by default) the same way as any other d
 
 **Superlikes are derived, not stored.** Whether someone has used their superlike is a query over the current round's votes. Earlier versions kept a separate list, which could drift from the votes (for example when a superliked film was removed). Deriving it removes that class of bugs.
 
-**Auth and access.** Accounts exist only through invite links (`secrets.token_urlsafe(32)`). Tokens are signed JWTs with a configurable lifetime, and every request re-reads the user from the database, so deactivating someone takes effect immediately. Login returns the same error for unknown users and wrong passwords, and failed logins and registrations are rate-limited per IP. Guests are checked against the active round on every round-scoped endpoint.
+**Auth and access.** Accounts exist only through invite links (`secrets.token_urlsafe(32)`), which carry the token in the URL fragment so it never reaches server logs. Tokens are signed JWTs bound to the user id and a per-user token version; changing or resetting a password raises the version and logs out every other session. Every request re-reads the user, so deactivating someone takes effect immediately. Login answers unknown users and wrong passwords with the same error in the same time, usernames are unique ignoring case, and failed logins and registrations are rate-limited per IP. Guests are checked against the active round on every round-scoped endpoint, including comments and TMDB search.
+
+**Defense in depth for the frontend.** The login token lives in `localStorage`, so the frontend has no inline scripts or event handlers and the server sends a strict Content-Security-Policy (`script-src 'self'`). Even if an escaping mistake slipped through, injected markup could not run code. A test keeps inline scripts from coming back.
 
 **Time zones.** Deadlines are entered as local time (Europe/Berlin), converted to UTC before storage, and sent to the browser with an explicit offset. SQLite does not store offsets, so the API attaches UTC when reading.
 
