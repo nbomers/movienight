@@ -123,3 +123,26 @@ def test_rate_limiter_forgets_idle_keys_and_stays_bounded(monkeypatch: pytest.Mo
     # Checking a key that never failed does not create an entry.
     limiter.ensure_allowed("never-seen")
     assert "never-seen" not in limiter._hits
+
+
+def test_security_headers(client: TestClient) -> None:
+    page = client.get("/frontend/app.html")
+    csp = page.headers["content-security-policy"]
+    assert "script-src 'self'" in csp and "frame-ancestors 'none'" in csp
+    assert page.headers["cache-control"] == "no-cache"
+    assert client.get("/health").headers["cache-control"] == "no-store"
+
+
+def test_frontend_has_no_inline_scripts() -> None:
+    # The CSP forbids inline scripts; this keeps them from coming back.
+    import re
+    from pathlib import Path
+
+    frontend = Path(__file__).parent.parent / "frontend"
+    for page in frontend.glob("*.html"):
+        html = page.read_text(encoding="utf-8")
+        for tag in re.findall(r"<script\b[^>]*>", html):
+            assert "src=" in tag, f"inline script in {page.name}"
+        assert not re.search(r"\son[a-z]+\s*=", html), f"inline event handler in {page.name}"
+    for script in (frontend / "js").glob("*.js"):
+        assert not re.search(r"\son(click|error|load|mouse\w+|key\w+)=", script.read_text(encoding="utf-8")), script.name

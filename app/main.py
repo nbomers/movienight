@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
@@ -42,12 +43,12 @@ def _ensure_admin_exists():
             )
             db.add(user)
             db.commit()
-            print(f"[INIT] Admin-User '{settings.FIRST_ADMIN_USERNAME}' angelegt.")
+            print(f"[INIT] Created admin user '{settings.FIRST_ADMIN_USERNAME}'.")
     finally:
         db.close()
 
 
-app = FastAPI(title="Filmabend API", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="movienight API", version="1.0.0", lifespan=lifespan)
 
 if settings.CORS_ORIGINS:
     # Auth uses a bearer header, not cookies, so credentials are not needed.
@@ -58,13 +59,42 @@ if settings.CORS_ORIGINS:
         allow_headers=["Authorization", "Content-Type"],
     )
 
+# Scripts only from our own files: no inline scripts or event handlers exist
+# in the frontend, so an injected <script> or onerror= would not run. Inline
+# style attributes are allowed; they cannot execute code.
+CONTENT_SECURITY_POLICY = "; ".join([
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https://image.tmdb.org",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+])
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: StarletteRequest, call_next):
         response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        headers = response.headers
+        headers["X-Content-Type-Options"] = "nosniff"
+        headers["X-Frame-Options"] = "DENY"
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
+        headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
+        headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        if request.url.path.startswith("/frontend/"):
+            # Revalidate on every load (cheap with ETag), so pages and
+            # scripts from different versions are never mixed after an update.
+            headers.setdefault("Cache-Control", "no-cache")
+        else:
+            # API answers contain personal data; keep them out of caches.
+            headers.setdefault("Cache-Control", "no-store")
         return response
+
 
 app.add_middleware(SecurityHeadersMiddleware)
 
@@ -80,9 +110,8 @@ app.include_router(tmdb.router)
 if FRONTEND_DIR.exists():
     app.mount("/frontend", StaticFiles(directory=FRONTEND_DIR), name="frontend")
 
-    @app.get("/")
+    @app.get("/", include_in_schema=False)
     def root():
-        from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/frontend/index.html")
 
 
