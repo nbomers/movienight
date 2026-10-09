@@ -12,7 +12,9 @@ async function request(method, path, body = null) {
 
   const res = await fetch(API + path, opts);
 
-  if (res.status === 401) {
+  // An expired session sends the user back to the login. A 401 without a
+  // token (wrong password on the login form) is an ordinary error instead.
+  if (res.status === 401 && token) {
     localStorage.removeItem('token');
     window.location.href = '/frontend/index.html';
     return;
