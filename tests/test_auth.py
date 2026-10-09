@@ -65,3 +65,34 @@ def test_deactivated_user_is_rejected(client: TestClient, admin_headers: dict[st
     assert client.get("/auth/me", headers=headers).status_code == 401
     with SessionLocal() as db:
         assert db.get(User, user_id).is_active is False
+
+
+def _invite(client: TestClient, admin_headers: dict[str, str], **body) -> str:
+    resp = client.post("/admin/invites", json=body, headers=admin_headers)
+    assert resp.status_code == 201, resp.text
+    return resp.json()["token"]
+
+
+def test_username_is_unique_ignoring_case(client: TestClient, admin_headers: dict[str, str]) -> None:
+    make_user("alice")
+    token = _invite(client, admin_headers)
+    resp = client.post("/auth/register", json={"invite_token": token, "username": "Alice", "password": "password123"})
+    assert resp.status_code == 409
+
+
+def test_single_use_invite_works_once(client: TestClient, admin_headers: dict[str, str]) -> None:
+    token = _invite(client, admin_headers, max_uses=1)
+    first = client.post("/auth/register", json={"invite_token": token, "username": "bob", "password": "password123"})
+    assert first.status_code == 201
+    second = client.post("/auth/register", json={"invite_token": token, "username": "carl", "password": "password123"})
+    assert second.status_code == 400
+
+
+def test_guest_invite_joins_active_round(
+    client: TestClient, admin_headers: dict[str, str], active_round: int
+) -> None:
+    token = _invite(client, admin_headers, invite_type="guest")
+    resp = client.post("/auth/register", json={"invite_token": token, "username": "gast", "password": "password123"})
+    assert resp.status_code == 201
+    assert resp.json()["is_regular"] is False
+    assert client.get("/movies/", headers=auth("gast")).status_code == 200

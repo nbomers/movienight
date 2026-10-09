@@ -26,6 +26,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
+# Checked when a login names an unknown user, so that the response takes as
+# long as for a wrong password and does not reveal which usernames exist.
+_DUMMY_HASH = bcrypt.hashpw(b"timing-equalizer", bcrypt.gensalt()).decode("ascii")
+
+
+def burn_password_check(password: str) -> None:
+    verify_password(password, _DUMMY_HASH)
+
+
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """Create a signed JWT. Use `token_for_user` for login tokens."""
     to_encode = data.copy()

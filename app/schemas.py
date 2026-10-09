@@ -16,14 +16,14 @@ UtcDatetime = Annotated[datetime, AfterValidator(_assume_utc)]
 
 
 class RegisterRequest(BaseModel):
-    invite_token: str
+    invite_token: str = Field(max_length=64)
     username: str = Field(min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_-]+$")
     password: str = Field(min_length=8, max_length=72)
 
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(max_length=50)
+    password: str = Field(max_length=200)
 
 
 class TokenResponse(BaseModel):
