@@ -1,4 +1,4 @@
-# Filmabend
+# movienight
 
 **A self-hosted movie-night voting app for friend groups.**
 
@@ -47,8 +47,8 @@ The FastAPI app serves both the JSON API and the static frontend, so browser and
 Requires Python 3.12.
 
 ```bash
-git clone https://github.com/nbomers/filmabend.git
-cd filmabend
+git clone https://github.com/nbomers/movienight.git
+cd movienight
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 
@@ -74,10 +74,10 @@ pytest
 
 `deploy/` has examples for a typical single-server setup:
 
-- [`deploy/filmabend.service`](deploy/filmabend.service): systemd unit. It binds uvicorn to localhost and enables `--proxy-headers`, so the login rate limit sees real client IPs.
+- [`deploy/movienight.service`](deploy/movienight.service): systemd unit. It binds uvicorn to localhost and enables `--proxy-headers`, so the login rate limit sees real client IPs.
 - [`deploy/Caddyfile.example`](deploy/Caddyfile.example): reverse proxy with automatic HTTPS, plus a variant for use behind Cloudflare Tunnel.
 
-Back up the SQLite file (`filmabend.db` by default) the same way as any other data directory.
+Back up the SQLite file (`movienight.db` by default) the same way as any other data directory.
 
 ## Design decisions
 
