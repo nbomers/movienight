@@ -110,3 +110,16 @@ def test_stale_admin_copy_is_not_served(client: TestClient) -> None:
 def test_no_cors_by_default(client: TestClient) -> None:
     resp = client.get("/health", headers={"Origin": "https://evil.example"})
     assert "access-control-allow-origin" not in resp.headers
+
+
+def test_rate_limiter_forgets_idle_keys_and_stays_bounded(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.rate_limit import SlidingWindowLimiter
+
+    limiter = SlidingWindowLimiter()
+    monkeypatch.setattr(SlidingWindowLimiter, "MAX_KEYS", 5)
+    for i in range(20):
+        limiter.record(f"ip-{i}")
+    assert len(limiter._hits) <= 5
+    # Checking a key that never failed does not create an entry.
+    limiter.ensure_allowed("never-seen")
+    assert "never-seen" not in limiter._hits
