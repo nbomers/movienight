@@ -103,14 +103,19 @@ def complete_round(round_id: int, watched_movie_id: int | None = None, db: Sessi
     if round_.status != RoundStatus.active:
         raise HTTPException(status_code=400, detail="Runde ist nicht aktiv")
 
+    if watched_movie_id is not None:
+        movie = db.query(Movie).filter(
+            Movie.id == watched_movie_id,
+            Movie.round_id == round_.id,
+            Movie.is_active == True,  # noqa
+        ).first()
+        if not movie:
+            raise HTTPException(status_code=400, detail="Film gehört nicht zu dieser Runde")
+        round_.watched_movie_id = movie.id
+        movie.is_active = False
+
     round_.status = RoundStatus.completed
     round_.ends_at = datetime.now(timezone.utc)
-
-    if watched_movie_id:
-        movie = db.query(Movie).filter(Movie.id == watched_movie_id).first()
-        if movie:
-            round_.watched_movie_id = watched_movie_id
-            movie.is_active = False
 
     # Alle Votes zurücksetzen nach jeder Runde
     db.query(Vote).filter(Vote.round_id == round_id).delete()
@@ -130,7 +135,11 @@ def set_watched_movie(
     round_ = db.query(Round).filter(Round.id == round_id).first()
     if not round_:
         raise HTTPException(status_code=404, detail="Runde nicht gefunden")
-    movie = db.query(Movie).filter(Movie.id == watched_movie_id).first()
+    if round_.status != RoundStatus.completed:
+        raise HTTPException(status_code=400, detail="Nur abgeschlossene Runden")
+    if round_.watched_movie_id is not None:
+        raise HTTPException(status_code=409, detail="Für diese Runde ist bereits ein Film markiert")
+    movie = db.query(Movie).filter(Movie.id == watched_movie_id, Movie.is_active == True).first()  # noqa
     if not movie:
         raise HTTPException(status_code=404, detail="Film nicht gefunden")
     round_.watched_movie_id = watched_movie_id
@@ -162,6 +171,8 @@ def update_deadline(
     round_ = db.query(Round).filter(Round.id == round_id).first()
     if not round_:
         raise HTTPException(status_code=404, detail="Runde nicht gefunden")
+    if round_.status != RoundStatus.active:
+        raise HTTPException(status_code=400, detail="Runde ist nicht aktiv")
     round_.vote_deadline = parse_deadline(payload.vote_deadline)
     db.commit()
     db.refresh(round_)

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -37,13 +38,19 @@ def vote(
     db: Session = Depends(get_db),
     current_user=Depends(get_round_access),
 ):
-    movie = db.query(Movie).filter(Movie.id == movie_id, Movie.is_active == True).first()  # noqa
-    if not movie:
-        raise HTTPException(status_code=404, detail="Film nicht gefunden")
-
     active_round = db.query(Round).filter(Round.status == RoundStatus.active).first()
     if not active_round:
         raise HTTPException(status_code=400, detail="Abstimmung nur während einer aktiven Runde möglich")
+
+    # Only movies of the running round can be voted on. Without this check
+    # any active movie id (e.g. one left over from an older round) counted.
+    movie = db.query(Movie).filter(
+        Movie.id == movie_id,
+        Movie.is_active == True,  # noqa
+        Movie.round_id == active_round.id,
+    ).first()
+    if not movie:
+        raise HTTPException(status_code=404, detail="Film nicht gefunden")
 
     if active_round.vote_deadline:
         deadline = active_round.vote_deadline
@@ -86,6 +93,11 @@ def vote(
         round_id=round_id,
     )
     db.add(new_vote)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # A parallel request (double tap) created the vote first.
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Stimme wurde bereits gezählt") from None
     db.refresh(new_vote)
     return new_vote

@@ -156,15 +156,15 @@ def add_movie(payload: MovieCreate, db: Session = Depends(get_db), current_user=
 
 @router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_movie(movie_id: int, db: Session = Depends(get_db), current_user=Depends(get_round_access)):
-    movie = db.query(Movie).filter(Movie.id == movie_id).first()
+    movie = db.query(Movie).filter(Movie.id == movie_id, Movie.is_active == True).first()  # noqa
     if not movie:
         raise HTTPException(status_code=404, detail="Film nicht gefunden")
     if movie.submitted_by != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Du kannst nur eigene Filme entfernen")
-    # Ohne aktive Runde ist die Ansicht read-only — nur Admins dürfen aufräumen
+    # Outside the running round the view is read-only; only admins clean up.
     active_round = db.query(Round).filter(Round.status == RoundStatus.active).first()
-    if not active_round and not current_user.is_admin:
-        raise HTTPException(status_code=400, detail="Kein aktiver Filmabend — Entfernen nicht möglich")
+    if not current_user.is_admin and (not active_round or movie.round_id != active_round.id):
+        raise HTTPException(status_code=400, detail="Nur Filme der laufenden Runde können entfernt werden")
     from app.models import Vote as _V, Comment as _C
     db.query(_V).filter(_V.movie_id == movie.id).delete()
     db.query(_C).filter(_C.movie_id == movie.id).delete()

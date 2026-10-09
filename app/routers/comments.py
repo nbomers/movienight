@@ -2,18 +2,30 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_round_access
-from app.models import Comment, Movie
+from app.dependencies import get_active_round, get_round_access
+from app.models import Comment, Movie, User
 from app.schemas import CommentCreate, CommentResponse
 
 router = APIRouter(prefix="/movies", tags=["comments"])
 
+MAX_COMMENTS_PER_MOVIE = 10
 
-@router.get("/{movie_id}/comments", response_model=list[CommentResponse])
-def get_comments(movie_id: int, db: Session = Depends(get_db), _=Depends(get_round_access)):
-    movie = db.query(Movie).filter(Movie.id == movie_id, Movie.is_active == True).first()  # noqa
+
+def _visible_movie(db: Session, movie_id: int, user: User) -> Movie:
+    """Guests only see the movies of the round they were invited to."""
+    query = db.query(Movie).filter(Movie.id == movie_id, Movie.is_active == True)  # noqa
+    if not (user.is_admin or user.is_regular):
+        active_round = get_active_round(db)
+        query = query.filter(Movie.round_id == (active_round.id if active_round else -1))
+    movie = query.first()
     if not movie:
         raise HTTPException(status_code=404, detail="Film nicht gefunden")
+    return movie
+
+
+@router.get("/{movie_id}/comments", response_model=list[CommentResponse])
+def get_comments(movie_id: int, db: Session = Depends(get_db), current_user=Depends(get_round_access)):
+    _visible_movie(db, movie_id, current_user)
     comments = (
         db.query(Comment)
         .filter(Comment.movie_id == movie_id)
@@ -35,20 +47,18 @@ def add_comment(
     db: Session = Depends(get_db),
     current_user=Depends(get_round_access),
 ):
-    movie = db.query(Movie).filter(Movie.id == movie_id, Movie.is_active == True).first()  # noqa
-    if not movie:
-        raise HTTPException(status_code=404, detail="Film nicht gefunden")
+    _visible_movie(db, movie_id, current_user)
     text = payload.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Kommentar darf nicht leer sein")
-    # Spam protection: max 10 comments per user per movie
+    # Spam protection
     existing_count = db.query(Comment).filter(
         Comment.movie_id == movie_id,
         Comment.user_id == current_user.id
     ).count()
-    if existing_count >= 10:
-        raise HTTPException(status_code=400, detail="Maximal 10 Kommentare pro Film")
-    comment = Comment(movie_id=movie_id, user_id=current_user.id, text=text[:1000])
+    if existing_count >= MAX_COMMENTS_PER_MOVIE:
+        raise HTTPException(status_code=400, detail=f"Maximal {MAX_COMMENTS_PER_MOVIE} Kommentare pro Film")
+    comment = Comment(movie_id=movie_id, user_id=current_user.id, text=text)
     db.add(comment)
     db.commit()
     db.refresh(comment)
