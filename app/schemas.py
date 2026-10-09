@@ -37,7 +37,7 @@ class UserResponse(BaseModel):
     is_admin: bool
     is_active: bool
     is_regular: bool
-    created_at: datetime
+    created_at: UtcDatetime
     model_config = {"from_attributes": True}
 
 
@@ -51,14 +51,14 @@ class InviteTokenCreate(BaseModel):
 class InviteTokenResponse(BaseModel):
     id: int
     token: str
-    expires_at: datetime
+    expires_at: UtcDatetime
     is_used: bool = False
     is_expired: bool = False
     max_uses: int
     use_count: int
     invite_type: InviteType = InviteType.regular
     label: str | None = None
-    created_at: datetime
+    created_at: UtcDatetime
     model_config = {"from_attributes": True}
 
     @classmethod
@@ -70,6 +70,8 @@ class InviteTokenResponse(BaseModel):
 
 
 class MovieCreate(BaseModel):
+    model_config = {"str_strip_whitespace": True}
+
     title: str = Field(min_length=1, max_length=255)
     tmdb_id: int | None = Field(default=None, ge=1)
     overview: str | None = Field(default=None, max_length=5000)
@@ -100,7 +102,7 @@ class MovieResponse(BaseModel):
     round_id: int | None
     is_active: bool
     rounds_survived: int
-    created_at: datetime
+    created_at: UtcDatetime
     upvotes: int = 0
     downvotes: int = 0
     superlikes: int = 0
@@ -122,7 +124,7 @@ class VoteResponse(BaseModel):
     movie_id: int
     vote_type: VoteType
     round_id: int | None
-    created_at: datetime
+    created_at: UtcDatetime
     model_config = {"from_attributes": True}
 
 
@@ -148,11 +150,19 @@ class RoundResponse(BaseModel):
 class WatchedEntry(BaseModel):
     round_id: int
     round_name: str
-    watched_at: datetime
+    watched_at: UtcDatetime | None
     movie_id: int
+    movie_tmdb_id: int | None
     movie_title: str
     movie_poster_path: str | None
     movie_release_year: int | None
+    movie_genres: str | None
+    submitted_by_username: str
+
+
+class AppConfig(BaseModel):
+    max_movies_per_user: int
+    tmdb_enabled: bool
 
 
 class CommentCreate(BaseModel):
@@ -165,7 +175,7 @@ class CommentResponse(BaseModel):
     user_id: int
     username: str = ""
     text: str
-    created_at: datetime
+    created_at: UtcDatetime
     model_config = {"from_attributes": True}
 
 
@@ -204,5 +214,5 @@ class RoundGuestResponse(BaseModel):
     round_id: int
     user_id: int
     username: str = ""
-    added_at: datetime
+    added_at: UtcDatetime
     model_config = {"from_attributes": True}

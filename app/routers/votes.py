@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -52,12 +50,8 @@ def vote(
     if not movie:
         raise HTTPException(status_code=404, detail="Film nicht gefunden")
 
-    if active_round.vote_deadline:
-        deadline = active_round.vote_deadline
-        if deadline.tzinfo is None:
-            deadline = deadline.replace(tzinfo=timezone.utc)
-        if datetime.now(timezone.utc) > deadline:
-            raise HTTPException(status_code=400, detail="Abstimmung ist geschlossen — Deadline abgelaufen")
+    if active_round.voting_closed:
+        raise HTTPException(status_code=400, detail="Abstimmung ist geschlossen — Deadline abgelaufen")
 
     round_id = active_round.id
 

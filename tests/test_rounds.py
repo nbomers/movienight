@@ -148,3 +148,34 @@ def test_users_can_only_remove_own_movies(client: TestClient, admin_headers: dic
     movie_id = add_movie(client, auth("alice"), "Alices Film").json()["id"]
     assert client.delete(f"/movies/{movie_id}", headers=auth("bob")).status_code == 403
     assert client.delete(f"/movies/{movie_id}", headers=auth("alice")).status_code == 204
+
+
+def test_watched_history_has_offsets_and_tmdb_ids(
+    client: TestClient, admin_headers: dict[str, str], active_round: int
+) -> None:
+    movie_id = add_movie(client, admin_headers, "Inception", tmdb_id=27205).json()["id"]
+    client.post(f"/rounds/{active_round}/complete?watched_movie_id={movie_id}", headers=admin_headers)
+    entry = client.get("/movies/watched", headers=admin_headers).json()[0]
+    assert entry["movie_tmdb_id"] == 27205
+    assert entry["submitted_by_username"] == "admin"
+    assert datetime.fromisoformat(entry["watched_at"]).tzinfo is not None
+
+
+def test_invite_expiry_is_sent_with_offset(client: TestClient, admin_headers: dict[str, str]) -> None:
+    client.post("/admin/invites", json={}, headers=admin_headers)
+    invite = client.get("/admin/invites", headers=admin_headers).json()[0]
+    assert datetime.fromisoformat(invite["expires_at"]).tzinfo is not None
+
+
+def test_config_endpoint(client: TestClient, admin_headers: dict[str, str]) -> None:
+    assert client.get("/movies/config", headers=admin_headers).json() == {
+        "max_movies_per_user": 3,
+        "tmdb_enabled": False,
+    }
+
+
+def test_title_whitespace_does_not_bypass_duplicate_check(
+    client: TestClient, admin_headers: dict[str, str], active_round: int
+) -> None:
+    assert add_movie(client, admin_headers, "Heat").status_code == 201
+    assert add_movie(client, admin_headers, "  Heat ").status_code == 409

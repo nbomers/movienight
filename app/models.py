@@ -118,6 +118,16 @@ class Round(Base):
     watched_movie: Mapped["Movie | None"] = relationship("Movie", foreign_keys=[watched_movie_id])
     guests: Mapped[list["RoundGuest"]] = relationship(back_populates="round", cascade="all, delete-orphan")
 
+    @property
+    def voting_closed(self) -> bool:
+        """True once the vote deadline has passed. No votes or proposals then."""
+        if self.vote_deadline is None:
+            return False
+        deadline = self.vote_deadline
+        if deadline.tzinfo is None:  # SQLite drops the offset; stored as UTC
+            deadline = deadline.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) > deadline
+
 
 class RoundGuest(Base):
     """Gäste die explizit für eine Runde eingeladen wurden."""

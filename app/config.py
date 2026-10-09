@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # unless a separate frontend origin is configured explicitly.
     CORS_ORIGINS: list[str] = []
 
+    # Proposals per person and round (admins are not limited).
+    MAX_MOVIES_PER_USER: int = 3
+
     # Login/registration attempts per client IP within the window.
     AUTH_RATE_LIMIT: int = 10
     AUTH_RATE_WINDOW_SECONDS: int = 300
